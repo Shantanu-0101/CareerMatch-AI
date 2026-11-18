@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Interview Practice{% endblock %}
+{% block page_title %}Interview Practice{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Interview Practice</h1>
+    <p class="muted">Practise technical and HR questions one at a time, get feedback and compare with a suggested answer.</p>
+  </div>
+  <a href="{{ url_for('interview.history') }}" class="btn btn-outline"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+</div>
+
+{% if active and active.index < active.ids|length %}
+<div class="alert alert-info"><i class="fa-solid fa-play"></i>
+  <div>You have an unfinished <b>{{ active.domain }}</b> session (question {{ active.index + 1 }} of {{ active.ids|length }}).</div>
+  <a href="{{ url_for('interview.practice') }}" class="btn btn-sm btn-primary">Resume</a>
+</div>
+{% endif %}
+
+<div class="grid grid-2-1">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-sliders"></i> Set up a practice session</h3></div>
+    <form action="{{ url_for('interview.start') }}" method="post" class="form" data-loading="Preparing your questions...">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label>Domain</label>
+        <div class="choice-grid">
+          {% for d in domains %}
+          <label class="choice"><input type="radio" name="domain" value="{{ d }}" {{ 'checked' if loop.first }}><span>{{ d }}{% if d == 'HR' %} <small>(common HR)</small>{% endif %}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label for="difficulty">Difficulty</label>
+          <select id="difficulty" name="difficulty">{% for d in difficulties %}<option>{{ d }}</option>{% endfor %}</select>
+          <small class="muted">Ignored for HR questions.</small></div>
+        <div class="form-group"><label for="count">Number of questions</label>
+          <select id="count" name="count">{% for c in counts %}<option value="{{ c }}" {{ 'selected' if c == 5 }}>{{ c }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="form-group">
+        <label>Question source</label>
+        <div class="choice-grid two">
+          <label class="choice"><input type="radio" name="mode" value="bank" {{ 'checked' if not ai_enabled }}><span><i class="fa-solid fa-book"></i> Curated question bank</span></label>
+          <label class="choice {{ 'disabled' if not ai_enabled }}"><input type="radio" name="mode" value="ai" {{ 'checked' if ai_enabled else 'disabled' }}><span><i class="fa-solid fa-wand-magic-sparkles"></i> AI-generated {% if not ai_enabled %}<small>(needs API key)</small>{% endif %}</span></label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block"><i class="fa-solid fa-play"></i> Start practice</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-list-check"></i> Your progress</h3>
+      {% if avg is not none %}<span class="score-pill ok">Avg {{ avg }}/10</span>{% endif %}</div>
+    <ul class="domain-progress">
+      {% for s in domain_stats %}
+      <li>
+        <div class="dp-head"><span>{{ s.domain }}</span><span class="muted small">{{ s.done }} completed{% if s.total %} / {{ s.total }} in bank{% endif %}</span></div>
+        <div class="progress"><div class="progress-bar" style="width: {{ (100 * s.done / s.total)|round|int if s.total else 0 }}%"></div></div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Recently answered</h3></div>
+  {% if recent %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Question</th><th>Domain</th><th>Score</th><th>Evaluated by</th><th></th></tr></thead>
+    <tbody>
+    {% for p in recent %}
+      <tr>
+        <td class="q-cell">{{ p.question.question }}</td>
+        <td>{{ p.question.domain }}</td>
+        <td>{% if p.skipped %}<span class="muted">Skipped</span>{% else %}<b>{{ p.score }}/10</b>{% endif %}</td>
+        <td>{% if not p.skipped %}<span class="badge {{ 'badge-ai' if p.method == 'ai' else 'badge-rule' }}">{{ 'AI' if p.method == 'ai' else 'Keyword match' }}</span>{% endif %}</td>
+        <td class="right"><a href="{{ url_for('interview.review', progress_id=p.id) }}" class="btn btn-sm btn-ghost">Review</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty-state small"><div class="empty-icon"><i class="fa-solid fa-comments"></i></div>
+    <p>No questions answered yet. Start a session above.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

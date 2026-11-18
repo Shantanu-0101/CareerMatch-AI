@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Resume Analyzer{% endblock %}
+{% block page_title %}Resume Analyzer{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>AI Resume Analyzer</h1>
+    <p class="muted">Upload your resume to get a score out of 100, detailed feedback and a skill-gap report for your target role.</p>
+  </div>
+</div>
+
+<div class="grid grid-2-1">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-cloud-arrow-up"></i> Upload resume</h3></div>
+    <form action="{{ url_for('resume.upload') }}" method="post" enctype="multipart/form-data" class="form"
+          data-loading="{{ 'Analyzing your resume with AI... this can take up to a minute' if ai_enabled else 'Analyzing your resume...' }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="dropzone" id="dropzone">
+        <input type="file" name="resume" id="resume-file" accept=".pdf,.docx" required>
+        <i class="fa-solid fa-file-arrow-up"></i>
+        <b id="file-label">Drag &amp; drop or click to choose a file</b>
+        <span class="muted small">PDF or DOCX · max {{ config.MAX_CONTENT_LENGTH // (1024*1024) }} MB · text-based files only</span>
+      </label>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="role">Target role</label>
+          <select id="role" name="role">
+            {% for r in roles %}<option {{ 'selected' if r == default_role }}>{{ r }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="company">Target company <span class="muted">(optional)</span></label>
+          <select id="company" name="company">
+            <option value="">Any company</option>
+            {% for c in companies %}<option>{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze resume</button>
+    </form>
+  </div>
+
+  <div class="card info-card">
+    <h3 class="card-title"><i class="fa-solid fa-scale-balanced"></i> How scoring works</h3>
+    <p class="muted small">Your score always comes from the same fixed rubric, so results are consistent and explainable.</p>
+    <table class="rubric">
+      <tr><td>Technical skills</td><td>20</td></tr>
+      <tr><td>Role keyword relevance</td><td>10</td></tr>
+      <tr><td>Education</td><td>10</td></tr>
+      <tr><td>Projects</td><td>15</td></tr>
+      <tr><td>Work experience</td><td>15</td></tr>
+      <tr><td>Achievements &amp; impact</td><td>10</td></tr>
+      <tr><td>Formatting &amp; structure</td><td>20</td></tr>
+      <tr class="total"><td>Total</td><td>100</td></tr>
+    </table>
+    <p class="muted small">
+      {% if ai_enabled %}<span class="badge badge-ai">AI</span> {{ ai_label }} adds written feedback and recommendations on top of the rubric.
+      {% else %}<span class="badge badge-rule">Rule-based</span> No AI key is configured, so all feedback is rule-based. Add one in <code>.env</code> for AI feedback.{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Your resumes</h3></div>
+  {% if resumes %}
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>File</th><th>Uploaded</th><th>Latest score</th><th>Target</th><th>Method</th><th class="right">Actions</th></tr></thead>
+    <tbody>
+    {% for r in resumes %}{% set a = r.latest_analysis %}
+      <tr>
+        <td><i class="fa-solid {{ 'fa-file-pdf text-red' if r.file_type == 'pdf' else 'fa-file-word text-blue' }}"></i> {{ r.original_filename }}</td>
+        <td>{{ r.uploaded_at.strftime('%d %b %Y') }}</td>
+        <td>{% if a %}<span class="score-pill {{ 'good' if a.overall_score >= 70 else ('ok' if a.overall_score >= 45 else 'low') }}">{{ a.overall_score }}/100</span>{% endif %}</td>
+        <td class="small">{{ a.target_role if a }}{% if a and a.target_company %} · {{ a.target_company }}{% endif %}</td>
+        <td>{% if a %}<span class="badge {{ 'badge-ai' if a.method == 'ai' else 'badge-rule' }}">{{ 'AI + rubric' if a.method == 'ai' else 'Rule-based' }}</span>{% endif %}</td>
+        <td class="right actions">
+          {% if a %}<a class="btn btn-sm btn-outline" href="{{ url_for('resume.analysis', analysis_id=a.id) }}">View report</a>{% endif %}
+          <a class="icon-btn" href="{{ url_for('resume.download_file', resume_id=r.id) }}" title="Download original"><i class="fa-solid fa-download"></i></a>
+          <form action="{{ url_for('resume.delete', resume_id=r.id) }}" method="post" class="inline" data-confirm="Delete this resume and all its analyses?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="icon-btn danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fa-solid fa-file-circle-question"></i></div>
+    <h3>No resumes yet</h3>
+    <p>Upload your first resume above to see your score and skill gaps. Don't have one? Create it in the Resume Builder.</p>
+    <a href="{{ url_for('resume.builder_new') }}" class="btn btn-outline">Open Resume Builder</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

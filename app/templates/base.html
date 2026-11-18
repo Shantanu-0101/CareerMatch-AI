@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Career Match AI{% endblock %} · Career Match AI</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user.is_authenticated %}
+{% set bp = request.blueprint %}
+{% macro nav(endpoint, icon, label, active) -%}
+  <a href="{{ url_for(endpoint) }}" class="nav-link {{ 'active' if active }}"><i class="fa-solid {{ icon }}"></i><span>{{ label }}</span></a>
+{%- endmacro %}
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <a href="{{ url_for('dashboard.index') }}" class="brand">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="34" height="34">
+      <span>Career Match <b>AI</b></span>
+    </a>
+    <nav class="nav">
+      <p class="nav-section">Overview</p>
+      {{ nav('dashboard.index', 'fa-gauge-high', 'Dashboard', bp == 'dashboard') }}
+      <p class="nav-section">Resume</p>
+      {{ nav('resume.analyzer', 'fa-magnifying-glass-chart', 'Resume Analyzer', request.endpoint in ['resume.analyzer','resume.analysis']) }}
+      {{ nav('resume.builder_list', 'fa-file-pen', 'Resume Builder', request.endpoint and request.endpoint.startswith('resume.builder')) }}
+      <p class="nav-section">Career</p>
+      {{ nav('jobs.index', 'fa-briefcase', 'Job Finder', request.endpoint == 'jobs.index') }}
+      {{ nav('jobs.saved', 'fa-bookmark', 'Saved Jobs', request.endpoint == 'jobs.saved') }}
+      {{ nav('interview.index', 'fa-comments', 'Interview Practice', bp == 'interview') }}
+      <p class="nav-section">Account</p>
+      {{ nav('profile.index', 'fa-user', 'My Profile', bp == 'profile') }}
+    </nav>
+    <div class="sidebar-footer">
+      <div class="ai-status {{ 'on' if ai_enabled else 'off' }}" title="{{ ai_label }}">
+        <i class="fa-solid {{ 'fa-wand-magic-sparkles' if ai_enabled else 'fa-gears' }}"></i>
+        <div><b>{{ 'AI enabled' if ai_enabled else 'Rule-based mode' }}</b><small>{{ ai_label if ai_enabled else 'No AI key configured' }}</small></div>
+      </div>
+      <form action="{{ url_for('auth.logout') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Log out</span></button>
+      </form>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <a href="{{ url_for('profile.index') }}" class="user-chip">
+        <span class="avatar">{{ current_user.full_name[:1]|upper }}</span>
+        <span class="user-name">{{ current_user.full_name|title }}</span>
+      </a>
+    </header>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% else %}
+  {% block public %}{% endblock %}
+{% endif %}
+
+<div class="toast-container" id="toasts" aria-live="polite"></div>
+<div class="loading-overlay" id="loading" hidden>
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">Working...</p></div>
+</div>
+<script id="flash-data" type="application/json">{{ get_flashed_messages(with_categories=true)|tojson }}</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

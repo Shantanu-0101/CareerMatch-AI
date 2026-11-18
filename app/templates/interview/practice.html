@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Practice{% endblock %}
+{% block page_title %}Interview Practice{% endblock %}
+{% block content %}
+<div class="practice">
+  <div class="practice-head">
+    <span class="chip">{{ iv.domain }}</span>
+    <span class="chip">{{ iv.difficulty }}</span>
+    <span class="badge {{ 'badge-ai' if q.source == 'ai' else 'badge-rule' }}">{{ 'AI-generated question' if q.source == 'ai' else 'Question bank' }}</span>
+    <span class="muted small push">Question {{ number }} of {{ total }}</span>
+  </div>
+  <div class="progress"><div class="progress-bar" style="width: {{ (100 * (number - 1) / total)|round|int }}%"></div></div>
+
+  <div class="card question-card">
+    <p class="q-label">Question {{ number }}</p>
+    <h2>{{ q.question }}</h2>
+    <form action="{{ url_for('interview.answer') }}" method="post" class="form" data-loading="{{ 'Evaluating your answer with AI...' if ai_enabled else 'Evaluating your answer...' }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label for="answer">Your answer</label>
+        <textarea id="answer" name="answer" rows="8" maxlength="5000" placeholder="Type your answer as you would say it in an interview..."></textarea>
+        <small class="muted"><span id="word-count">0</span> words · aim for 50-150 words</small>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" name="action" value="submit"><i class="fa-solid fa-paper-plane"></i> Submit answer</button>
+        <button class="btn btn-ghost" name="action" value="skip" formnovalidate><i class="fa-solid fa-forward"></i> Skip &amp; show answer</button>
+      </div>
+    </form>
+  </div>
+  <form action="{{ url_for('interview.end') }}" method="post" class="end-form" data-confirm="End this practice session?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-ghost btn-sm"><i class="fa-solid fa-xmark"></i> End session</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var ta = document.getElementById('answer'), wc = document.getElementById('word-count');
+    ta.addEventListener('input', function () { wc.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0; });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="welcome">
+  <div>
+    <h1>Welcome back, {{ current_user.first_name|title }} 👋</h1>
+    <p class="muted">Here is a snapshot of your career readiness.</p>
+  </div>
+  {% if stats.profile_completion < 100 %}
+  <a href="{{ url_for('profile.index') }}" class="profile-meter" title="Complete your profile for better job matches">
+    <span>Profile {{ stats.profile_completion }}% complete</span>
+    <div class="progress"><div class="progress-bar" style="width: {{ stats.profile_completion }}%"></div></div>
+  </a>
+  {% endif %}
+</div>
+
+<div class="grid grid-4">
+  <a class="stat-card" href="{{ url_for('resume.analyzer') }}">
+    <div class="stat-icon blue"><i class="fa-solid fa-file-lines"></i></div>
+    <div><p class="stat-label">Resumes uploaded</p><p class="stat-value">{{ stats.resumes }}</p></div>
+  </a>
+  <a class="stat-card" href="{{ url_for('resume.analysis', analysis_id=latest.id) if latest else url_for('resume.analyzer') }}">
+    <div class="stat-icon purple"><i class="fa-solid fa-star"></i></div>
+    <div><p class="stat-label">Latest resume score</p>
+      <p class="stat-value">{% if stats.latest_score is not none %}{{ stats.latest_score }}<small>/100</small>{% else %}<span class="muted small">Not analyzed</span>{% endif %}</p></div>
+  </a>
+  <a class="stat-card" href="{{ url_for('profile.index') }}">
+    <div class="stat-icon green"><i class="fa-solid fa-code"></i></div>
+    <div><p class="stat-label">Skills identified</p><p class="stat-value">{{ stats.skills }}</p></div>
+  </a>
+  <a class="stat-card" href="{{ url_for('jobs.index') }}">
+    <div class="stat-icon orange"><i class="fa-solid fa-briefcase"></i></div>
+    <div><p class="stat-label">Recommended jobs <span class="badge badge-demo">demo data</span></p><p class="stat-value">{{ stats.recommended_jobs }}</p></div>
+  </a>
+</div>
+
+<h2 class="section-title">Quick actions</h2>
+<div class="grid grid-4 quick-actions">
+  <a href="{{ url_for('resume.analyzer') }}" class="action-card"><i class="fa-solid fa-magnifying-glass-chart"></i><b>Analyze resume</b><span>Get a score and skill gaps</span></a>
+  <a href="{{ url_for('resume.builder_new') }}" class="action-card"><i class="fa-solid fa-file-pen"></i><b>Build resume</b><span>ATS-friendly templates</span></a>
+  <a href="{{ url_for('jobs.index') }}" class="action-card"><i class="fa-solid fa-briefcase"></i><b>Find jobs</b><span>See your compatibility</span></a>
+  <a href="{{ url_for('interview.index') }}" class="action-card"><i class="fa-solid fa-comments"></i><b>Practise interview</b><span>Technical &amp; HR questions</span></a>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Resume category scores</h3>
+      {% if latest %}<span class="muted small">{{ latest.resume.original_filename }}</span>{% endif %}</div>
+    {% if chart.categories %}
+      <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+    {% else %}
+      <div class="empty-state small"><div class="empty-icon"><i class="fa-solid fa-chart-column"></i></div>
+        <p>Upload a resume to see your category-wise scores.</p>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('resume.analyzer') }}">Upload resume</a></div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Resume score history</h3></div>
+    {% if chart.history %}
+      <div class="chart-box"><canvas id="historyChart"></canvas></div>
+    {% else %}
+      <div class="empty-state small"><div class="empty-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <p>Your score trend will appear after your first analysis.</p></div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Interview practice by domain</h3>
+      <span class="muted small">{{ stats.interview_done }} answered</span></div>
+    {% if chart.interview %}
+      <div class="chart-box"><canvas id="interviewChart"></canvas></div>
+    {% else %}
+      <div class="empty-state small"><div class="empty-icon"><i class="fa-solid fa-comments"></i></div>
+        <p>You haven't practised any questions yet.</p>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('interview.index') }}">Start practising</a></div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Recent activity</h3></div>
+    {% if activities %}
+    <ul class="activity-list">
+      {% for a in activities %}
+      <li><span class="activity-icon"><i class="fa-solid {{ a.icon }}"></i></span>
+        <div><p>{{ a.message }}</p><small>{{ a.created_at.strftime('%d %b %Y, %I:%M %p') }}</small></div></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <div class="empty-state small"><p>No activity yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+{% if top_jobs %}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Top job matches</h3>
+    <a href="{{ url_for('jobs.index') }}" class="btn btn-ghost btn-sm">View all</a></div>
+  <div class="mini-jobs">
+    {% for job, m in top_jobs %}
+    <div class="mini-job">
+      <div class="score-ring sm" style="--p: {{ m.score }}"><span>{{ m.score }}%</span></div>
+      <div><b>{{ job.title }}</b><p class="muted small">{{ job.company }} · {{ job.location }}</p></div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted small demo-note"><i class="fa-solid fa-circle-info"></i> Sample listings for demonstration, not real vacancies.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  window.dashboardCharts({{ chart|tojson }});
+</script>
+{% endblock %}

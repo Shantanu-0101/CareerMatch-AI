@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Resume report{% endblock %}
+{% block page_title %}Resume report{% endblock %}
+{% block content %}
+{% set gap = r.skill_gap %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('resume.analyzer') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> All resumes</a>
+    <h1>{{ a.resume.original_filename }}</h1>
+    <p class="muted">Analyzed {{ a.created_at.strftime('%d %b %Y, %I:%M %p') }} · Target: <b>{{ a.target_role }}</b>{% if a.target_company %} at <b>{{ a.target_company }}</b>{% endif %}</p>
+  </div>
+  <div class="method-box">
+    <span class="badge badge-rule"><i class="fa-solid fa-scale-balanced"></i> Score: rule-based rubric</span>
+    {% if r.ai.used %}<span class="badge badge-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> Feedback: AI-generated</span>
+    {% else %}<span class="badge badge-rule"><i class="fa-solid fa-gears"></i> Feedback: rule-based</span>{% endif %}
+  </div>
+</div>
+
+{% if r.ai.error %}<div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{ r.ai.error }}</div>{% endif %}
+
+<div class="grid grid-1-2">
+  <div class="card score-card">
+    <div class="score-ring lg" style="--p: {{ r.overall_score }}"><span>{{ r.overall_score }}<small>/100</small></span></div>
+    <h3>{% if r.overall_score >= 75 %}Strong resume{% elif r.overall_score >= 55 %}Good, can improve{% elif r.overall_score >= 35 %}Needs improvement{% else %}Needs major work{% endif %}</h3>
+    <p class="muted small">{{ r.word_count }} words · {{ r.sections_found|length }} sections · {{ r.detected_skills|length }} skills detected</p>
+    {% if history|length > 1 %}
+    <div class="history-mini">
+      <p class="small muted">Previous analyses of this file</p>
+      {% for h in history %}{% if h.id != a.id %}
+        <a href="{{ url_for('resume.analysis', analysis_id=h.id) }}" class="small">{{ h.created_at.strftime('%d %b') }} · {{ h.target_role }}{% if h.target_company %} @ {{ h.target_company }}{% endif %} · {{ h.overall_score }}</a>
+      {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Category scores</h3><span class="muted small">Click a category to see the rubric checks</span></div>
+    <div class="categories">
+      {% for c in r.categories %}
+      <details class="category">
+        <summary>
+          <span class="cat-name">{{ c.name }}</span>
+          <div class="progress"><div class="progress-bar {{ 'good' if c.percent >= 75 else ('ok' if c.percent >= 45 else 'low') }}" style="width: {{ c.percent }}%"></div></div>
+          <span class="cat-score">{{ '%g'|format(c.score) }}/{{ c.max }}</span>
+        </summary>
+        <ul class="checks">
+          {% for ch in c.checks %}
+          <li class="{{ 'pass' if ch.passed else 'fail' }}"><i class="fa-solid {{ 'fa-circle-check' if ch.passed else 'fa-circle-xmark' }}"></i>
+            <span>{{ ch.label }}</span><b>{{ '%g'|format(ch.points) }}/{{ ch.max }}</b></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-id-card"></i> Extracted information</h3><span class="badge badge-rule">from your file</span></div>
+    <dl class="info-list">
+      {% for label, key in [('Name','name'),('Email','email'),('Phone','phone'),('LinkedIn','linkedin'),('GitHub','github')] %}
+      <dt>{{ label }}</dt><dd>{{ r.personal_info[key] or '—' }}</dd>
+      {% endfor %}
+    </dl>
+    <p class="small"><b>Sections found:</b></p>
+    <div class="chips">{% for s in r.sections_found %}<span class="chip chip-ok">{{ s }}</span>{% else %}<span class="muted small">None detected</span>{% endfor %}</div>
+    {% if r.missing_sections %}
+    <p class="small"><b>Missing sections:</b></p>
+    <div class="chips">{% for s in r.missing_sections %}<span class="chip chip-missing">{{ s }}</span>{% endfor %}</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-building"></i> Skill gap: {{ gap.role }}{% if gap.company %} @ {{ gap.company }}{% endif %}</h3>
+      <span class="score-pill {{ 'good' if gap.match_percent >= 70 else ('ok' if gap.match_percent >= 40 else 'low') }}">{{ gap.match_percent }}% match</span></div>
+    <p class="small"><b>Detected in your resume</b> <span class="muted">(found in your file)</span></p>
+    <div class="chips">{% for s in r.detected_skills %}<span class="chip {{ 'chip-ok' if s in gap.matched else '' }}">{{ s }}</span>{% else %}<span class="muted small">No known skills detected.</span>{% endfor %}</div>
+    <p class="small"><b>Missing for this target</b> <span class="muted">(rule-based comparison)</span></p>
+    <div class="chips">{% for s in gap.missing %}<span class="chip chip-missing">{{ s }}</span>{% else %}<span class="muted small">You have every skill in this profile 🎉</span>{% endfor %}</div>
+    {% if r.ai.used and r.ai.recommended_skills %}
+    <p class="small"><b>AI-recommended skills to learn</b> <span class="muted">(AI suggestion, not from your resume)</span></p>
+    <div class="chips">{% for s in r.ai.recommended_skills %}<span class="chip chip-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> {{ s }}</span>{% endfor %}</div>
+    {% endif %}
+    <p class="muted small demo-note"><i class="fa-solid fa-circle-info"></i> Requirement profiles are sample, editable lists (<code>app/data/skills.py</code>), not official hiring criteria.</p>
+    <form action="{{ url_for('resume.reanalyze', resume_id=a.resume_id) }}" method="post" class="inline-form" data-loading="Re-analyzing...">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select name="role" aria-label="Role">{% for ro in roles %}<option {{ 'selected' if ro == a.target_role }}>{{ ro }}</option>{% endfor %}</select>
+      <select name="company" aria-label="Company"><option value="">Any company</option>{% for c in companies %}<option {{ 'selected' if c == a.target_company }}>{{ c }}</option>{% endfor %}</select>
+      <button class="btn btn-outline btn-sm">Compare</button>
+    </form>
+  </div>
+</div>
+
+{% if r.ai.used %}
+<div class="card ai-card">
+  <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-generated feedback</h3><span class="badge badge-ai">{{ r.ai.model }}</span></div>
+  {% if r.ai.summary %}<p>{{ r.ai.summary }}</p>{% endif %}
+  <div class="grid grid-3">
+    <div><h4 class="text-green"><i class="fa-solid fa-thumbs-up"></i> Strengths</h4><ul class="bullets">{% for s in r.ai.strengths %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    <div><h4 class="text-red"><i class="fa-solid fa-thumbs-down"></i> Weaknesses</h4><ul class="bullets">{% for s in r.ai.weaknesses %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    <div><h4 class="text-blue"><i class="fa-solid fa-lightbulb"></i> Suggestions</h4><ul class="bullets">{% for s in r.ai.suggestions %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  </div>
+  <p class="muted small">AI feedback can be wrong. Check it against your own resume.</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-gears"></i> Rule-based feedback</h3><span class="badge badge-rule">from the rubric</span></div>
+  <div class="grid grid-3">
+    <div><h4 class="text-green"><i class="fa-solid fa-thumbs-up"></i> Strengths</h4>
+      <ul class="bullets">{% for s in r.strengths %}<li>{{ s }}</li>{% else %}<li class="muted">No category scored 80% or more yet.</li>{% endfor %}</ul></div>
+    <div><h4 class="text-red"><i class="fa-solid fa-thumbs-down"></i> Weaknesses</h4>
+      <ul class="bullets">{% for s in r.weaknesses %}<li>{{ s }}</li>{% else %}<li class="muted">No category below 50%.</li>{% endfor %}</ul></div>
+    <div><h4 class="text-blue"><i class="fa-solid fa-lightbulb"></i> Suggestions</h4>
+      <ul class="bullets">{% for s in r.suggestions %}<li>{{ s }}</li>{% else %}<li class="muted">Great job, every check passed.</li>{% endfor %}</ul></div>
+  </div>
+  {% if r.recommended_skills %}
+  <p class="small"><b>Recommended technical skills to learn</b> <span class="muted">(skills in the {{ gap.role }} profile that are not in your resume)</span></p>
+  <div class="chips">{% for s in r.recommended_skills %}<span class="chip chip-missing">{{ s }}</span>{% endfor %}</div>
+  {% endif %}
+</div>
+
+<div class="cta-row">
+  <a href="{{ url_for('resume.builder_new') }}" class="btn btn-primary"><i class="fa-solid fa-file-pen"></i> Improve it in the Resume Builder</a>
+  <a href="{{ url_for('jobs.index') }}" class="btn btn-outline"><i class="fa-solid fa-briefcase"></i> See matching jobs</a>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Session summary{% endblock %}
+{% block page_title %}Interview Practice{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Session complete 🎉</h1>
+    <p class="muted">{{ iv.domain }} · {{ iv.difficulty }} · {{ rows|length }} question(s)</p>
+  </div>
+  {% if avg is not none %}<div class="score-ring lg" style="--p: {{ (avg * 10)|round|int }}"><span>{{ avg }}<small>/10</small></span></div>{% endif %}
+</div>
+<div class="card">
+  {% if rows %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>#</th><th>Question</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+    {% for p in rows %}
+      <tr><td>{{ loop.index }}</td><td class="q-cell">{{ p.question.question }}</td>
+        <td>{% if p.skipped %}<span class="muted">Skipped</span>{% else %}<b>{{ p.score }}/10</b>{% endif %}</td>
+        <td class="right"><a class="btn btn-sm btn-ghost" href="{{ url_for('interview.review', progress_id=p.id) }}">Review</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty-state small"><p>No answers recorded in this session.</p></div>{% endif %}
+</div>
+<div class="btn-row">
+  <form action="{{ url_for('interview.end') }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Start a new session</button>
+  </form>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline">Back to dashboard</a>
+</div>
+{% endblock %}

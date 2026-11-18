@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Saved jobs{% endblock %}
+{% block page_title %}Saved Jobs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('jobs.index') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Job Finder</a>
+    <h1>Saved jobs</h1>
+    <p class="muted">Jobs you bookmarked, with your current compatibility score.</p>
+  </div>
+</div>
+{% if results %}
+  <div class="job-list">
+    {% for job, m in results %}{% include "jobs/_job_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <div class="card"><div class="empty-state">
+    <div class="empty-icon"><i class="fa-regular fa-bookmark"></i></div>
+    <h3>No saved jobs yet</h3>
+    <p>Tap the bookmark icon on any job to save it here.</p>
+    <a href="{{ url_for('jobs.index') }}" class="btn btn-primary">Browse jobs</a>
+  </div></div>
+{% endif %}
+{% endblock %}

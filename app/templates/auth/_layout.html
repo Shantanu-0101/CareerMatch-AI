@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block public %}
+<div class="auth-wrap">
+  <section class="auth-brand">
+    <a href="{{ url_for('dashboard.home') }}" class="brand light">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="38" height="38">
+      <span>Career Match <b>AI</b></span>
+    </a>
+    <div class="auth-pitch">
+      <h2>Your AI-powered career assistant.</h2>
+      <ul>
+        <li><i class="fa-solid fa-circle-check"></i> Score your resume with a transparent rubric</li>
+        <li><i class="fa-solid fa-circle-check"></i> Find skill gaps for your target role and company</li>
+        <li><i class="fa-solid fa-circle-check"></i> Build ATS-friendly resumes and download PDFs</li>
+        <li><i class="fa-solid fa-circle-check"></i> Match jobs and practise interviews</li>
+      </ul>
+    </div>
+    <small>Built for students, fresh graduates and job seekers.</small>
+  </section>
+  <section class="auth-form-side">
+    <div class="auth-card">
+      {% block auth_content %}{% endblock %}
+    </div>
+  </section>
+</div>
+{% endblock %}

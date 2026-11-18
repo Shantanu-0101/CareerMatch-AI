@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Profile</h1>
+    <p class="muted">Your skills, preferred roles, locations and experience level are used for job matching and resume analysis.</p>
+  </div>
+  <div class="profile-meter static">
+    <span>Profile {{ profile.completion }}% complete</span>
+    <div class="progress"><div class="progress-bar" style="width: {{ profile.completion }}%"></div></div>
+  </div>
+</div>
+
+<form method="post" class="form" data-loading="Saving profile...">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 class="card-title"><i class="fa-solid fa-user"></i> Personal information</h3>
+      <div class="form-group"><label for="full_name">Full name</label>
+        <input id="full_name" name="full_name" value="{{ current_user.full_name }}" required maxlength="120"></div>
+      <div class="form-group"><label>Email</label>
+        <input value="{{ current_user.email }}" disabled><small class="muted">Email is used to log in and can't be changed here.</small></div>
+      <div class="form-row">
+        <div class="form-group"><label for="phone">Phone</label>
+          <input id="phone" name="phone" value="{{ profile.phone }}" maxlength="30" placeholder="+91 98765 43210"></div>
+        <div class="form-group"><label for="location">Current city</label>
+          <input id="location" name="location" value="{{ profile.location }}" maxlength="120" placeholder="Pune"></div>
+      </div>
+      <div class="form-group"><label for="headline">Headline</label>
+        <input id="headline" name="headline" value="{{ profile.headline }}" maxlength="160" placeholder="Final-year B.Tech student passionate about backend development"></div>
+      <div class="form-group"><label for="education">Educational background</label>
+        <textarea id="education" name="education" rows="4" maxlength="2000" placeholder="B.Tech Computer Engineering, ABC College, 2025, CGPA 8.2">{{ profile.education }}</textarea></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><i class="fa-solid fa-bullseye"></i> Career preferences</h3>
+      <div class="form-group"><label for="skills">Technical skills <span class="muted">(comma separated)</span></label>
+        <input id="skills" name="skills" value="{{ profile.skills }}" maxlength="1000" placeholder="Python, SQL, Flask, Git" list="skill-list">
+        <datalist id="skill-list">{% for s in skill_suggestions %}<option value="{{ s }}">{% endfor %}</datalist>
+        <div class="chips" id="skill-chips">{% for s in profile.skill_list %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+      </div>
+      <div class="form-group"><label for="career_interests">Career interests</label>
+        <textarea id="career_interests" name="career_interests" rows="2" maxlength="1000" placeholder="Backend development, data analytics">{{ profile.career_interests }}</textarea></div>
+      <div class="form-group"><label for="preferred_roles">Preferred job roles <span class="muted">(comma separated)</span></label>
+        <input id="preferred_roles" name="preferred_roles" value="{{ profile.preferred_roles }}" maxlength="500" list="role-list" placeholder="Python Developer, Data Analyst">
+        <datalist id="role-list">{% for r in roles %}<option value="{{ r }}">{% endfor %}</datalist>
+        <small class="muted">The first role is pre-selected as your target in the Resume Analyzer.</small></div>
+      <div class="form-group"><label for="preferred_locations">Preferred locations <span class="muted">(comma separated)</span></label>
+        <input id="preferred_locations" name="preferred_locations" value="{{ profile.preferred_locations }}" maxlength="500" placeholder="Pune, Bengaluru, Remote"></div>
+      <div class="form-group"><label for="experience_level">Experience level</label>
+        <select id="experience_level" name="experience_level">
+          <option value="">Select...</option>
+          {% for l in levels %}<option {{ 'selected' if l == profile.experience_level }}>{{ l }}</option>{% endfor %}
+        </select></div>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save profile</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var input = document.getElementById('skills'), box = document.getElementById('skill-chips');
+    input.addEventListener('input', function () {
+      box.innerHTML = '';
+      input.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (s) {
+        var c = document.createElement('span'); c.className = 'chip'; c.textContent = s; box.appendChild(c);
+      });
+    });
+  })();
+</script>
+{% endblock %}

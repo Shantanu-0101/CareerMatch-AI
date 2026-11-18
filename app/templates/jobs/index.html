@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Job Finder{% endblock %}
+{% block page_title %}Job Finder{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>AI Job Finder</h1>
+    <p class="muted">Search jobs and see how well each one matches your skills, experience level and preferred locations.</p>
+  </div>
+  <a href="{{ url_for('jobs.saved') }}" class="btn btn-outline"><i class="fa-solid fa-bookmark"></i> Saved jobs</a>
+</div>
+
+<div class="alert alert-info"><i class="fa-solid fa-circle-info"></i>
+  <div><b>Demonstration data.</b> These listings are sample jobs from fictional companies, included to show how matching works. They are not real vacancies.</div>
+</div>
+
+<form method="get" class="card filters">
+  <div class="filter-grid">
+    <div class="form-group"><label for="title">Job title / keyword</label>
+      <input id="title" name="title" value="{{ filters.title }}" placeholder="e.g. Python Developer"></div>
+    <div class="form-group"><label for="skills">Skills</label>
+      <input id="skills" name="skills" value="{{ filters.skills }}" placeholder="e.g. SQL, React"></div>
+    <div class="form-group"><label for="location">Location</label>
+      <input id="location" name="location" value="{{ filters.location }}" list="locations" placeholder="Any">
+      <datalist id="locations">{% for l in locations %}<option value="{{ l }}">{% endfor %}</datalist></div>
+    <div class="form-group"><label for="experience">Experience</label>
+      <select id="experience" name="experience"><option value="">Any</option>
+        {% for l in levels %}<option {{ 'selected' if l == filters.experience }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="form-group"><label for="job_type">Job type</label>
+      <select id="job_type" name="job_type"><option value="">Any</option>
+        {% for t in job_types %}<option {{ 'selected' if t == filters.job_type }}>{{ t }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="filter-actions">
+    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    <a href="{{ url_for('jobs.index') }}" class="btn btn-ghost">Clear</a>
+  </div>
+</form>
+
+<div class="my-skills">
+  {% if my_skills %}
+  <span class="small"><b>Matching against your skills:</b></span>
+  {% for s in my_skills[:14] %}<span class="chip">{{ s }}</span>{% endfor %}{% if my_skills|length > 14 %}<span class="muted small">+{{ my_skills|length - 14 }} more</span>{% endif %}
+  {% else %}
+  <span class="small muted"><i class="fa-solid fa-triangle-exclamation"></i> We don't know your skills yet. Add them in <a href="{{ url_for('profile.index') }}">your profile</a> or <a href="{{ url_for('resume.analyzer') }}">analyze a resume</a> to get real compatibility scores.</span>
+  {% endif %}
+</div>
+
+<p class="muted small">{{ results|length }} job(s) found · sorted by compatibility (skills 70 + experience 15 + location 15)</p>
+
+{% if results %}
+  <div class="job-list">
+    {% for job, m in results %}{% include "jobs/_job_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <div class="card"><div class="empty-state">
+    <div class="empty-icon"><i class="fa-solid fa-briefcase"></i></div>
+    <h3>No jobs match these filters</h3>
+    <p>Try removing a filter or searching a broader keyword.</p>
+    <a href="{{ url_for('jobs.index') }}" class="btn btn-outline">Clear filters</a>
+  </div></div>
+{% endif %}
+{% endblock %}

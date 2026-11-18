@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Resume Builder{% endblock %}
+{% block page_title %}Resume Builder{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Resume Builder</h1>
+    <p class="muted">Create ATS-friendly resumes with live preview and download them as PDF.</p>
+  </div>
+  <a href="{{ url_for('resume.builder_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New resume</a>
+</div>
+
+{% if items %}
+<div class="grid grid-3">
+  {% for item in items %}
+  <div class="card resume-tile">
+    <div class="resume-thumb template-{{ item.template }}">
+      <b>{{ item.data.personal.full_name }}</b>
+      <span></span><span></span><span class="short"></span><span></span><span class="short"></span>
+    </div>
+    <h3>{{ item.title }}</h3>
+    <p class="muted small">{{ templates[item.template] }} · updated {{ item.updated_at.strftime('%d %b %Y') }}</p>
+    <div class="tile-actions">
+      <a href="{{ url_for('resume.builder_edit', item_id=item.id) }}" class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i> Edit</a>
+      <a href="{{ url_for('resume.builder_pdf', item_id=item.id) }}" class="btn btn-sm btn-primary"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+      <form action="{{ url_for('resume.builder_delete', item_id=item.id) }}" method="post" class="inline" data-confirm="Delete this resume?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="icon-btn danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fa-solid fa-file-pen"></i></div>
+    <h3>No saved resumes yet</h3>
+    <p>Start a new resume. We'll prefill your name, email and skills from your profile.</p>
+    <a href="{{ url_for('resume.builder_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create your first resume</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Answer review{% endblock %}
+{% block page_title %}Interview Practice{% endblock %}
+{% block content %}
+<div class="practice">
+  <div class="practice-head">
+    <span class="chip">{{ q.domain }}</span><span class="chip">{{ q.difficulty }}</span>
+    {% if in_session %}<span class="muted small push">Question {{ iv.index + 1 }} of {{ iv.ids|length }}</span>{% endif %}
+  </div>
+
+  <div class="card question-card">
+    <p class="q-label">Question</p>
+    <h2>{{ q.question }}</h2>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-user"></i> Your answer</h3>
+        {% if not p.skipped %}<span class="score-pill {{ 'good' if p.score >= 7 else ('ok' if p.score >= 4 else 'low') }}">{{ p.score }}/10</span>{% endif %}</div>
+      {% if p.skipped %}
+        <p class="muted">You skipped this question.</p>
+      {% else %}
+        <p class="pre">{{ p.user_answer }}</p>
+        <div class="feedback">
+          <p class="small"><span class="badge {{ 'badge-ai' if p.method == 'ai' else 'badge-rule' }}">{{ 'AI evaluation' if p.method == 'ai' else 'Rule-based keyword match (approximate)' }}</span></p>
+          <p>{{ p.feedback.feedback }}</p>
+          {% if p.feedback.missing_points %}
+            <p class="small"><b>{{ 'Points you could add' if p.method == 'ai' else 'Key terms not mentioned' }}:</b></p>
+            {% if p.method == 'ai' %}<ul class="bullets">{% for m in p.feedback.missing_points %}<li>{{ m }}</li>{% endfor %}</ul>
+            {% else %}<div class="chips">{% for m in p.feedback.missing_points %}<span class="chip chip-missing">{{ m }}</span>{% endfor %}</div>{% endif %}
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="card answer-card">
+      <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-lightbulb"></i> Suggested answer</h3></div>
+      <p>{{ q.answer }}</p>
+      {% if q.explanation %}<p class="small"><b>Why it's asked:</b> {{ q.explanation }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="btn-row">
+    {% if in_session %}
+      <form action="{{ url_for('interview.next_question') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary">{% if is_last %}<i class="fa-solid fa-flag-checkered"></i> Finish &amp; see summary{% else %}Next question <i class="fa-solid fa-arrow-right"></i>{% endif %}</button>
+      </form>
+    {% else %}
+      <a href="{{ url_for('interview.index') }}" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Back to Interview Practice</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

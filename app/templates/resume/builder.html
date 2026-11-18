@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit resume' if item else 'New resume' }}{% endblock %}
+{% block page_title %}Resume Builder{% endblock %}
+{% block content %}
+<form id="builder-form" action="{{ url_for('resume.builder_save') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="item_id" value="{{ item.id if item else '' }}">
+  <input type="hidden" name="data" id="builder-data">
+  <input type="hidden" name="then" id="builder-then" value="">
+
+  <div class="page-header builder-toolbar">
+    <div>
+      <a href="{{ url_for('resume.builder_list') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> My resumes</a>
+      <input class="title-input" name="title" value="{{ title }}" maxlength="120" required aria-label="Resume title">
+    </div>
+    <div class="toolbar-actions">
+      <select name="template" id="template-select" aria-label="Template">
+        {% for key, label in templates.items() %}<option value="{{ key }}" {{ 'selected' if key == template }}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline" data-then=""><i class="fa-solid fa-floppy-disk"></i> Save</button>
+      <button type="submit" class="btn btn-primary" data-then="download"><i class="fa-solid fa-file-pdf"></i> Save &amp; download PDF</button>
+    </div>
+  </div>
+</form>
+
+<div class="builder">
+  <div class="builder-editor" id="editor"><!-- rendered by builder.js --></div>
+  <div class="builder-preview">
+    <div class="preview-label"><i class="fa-solid fa-eye"></i> Live preview</div>
+    <div class="paper template-{{ template }}" id="preview"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script id="builder-initial" type="application/json">{{ data|tojson }}</script>
+<script src="{{ url_for('static', filename='js/builder.js') }}"></script>
+{% if item and request.args.get('download') %}
+<script>window.addEventListener('load', function () { window.location.href = {{ url_for('resume.builder_pdf', item_id=item.id)|tojson }}; });</script>
+{% endif %}
+{% endblock %}

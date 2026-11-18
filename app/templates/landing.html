@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}AI career assistant{% endblock %}
+{% block public %}
+<div class="landing">
+  <header class="landing-nav">
+    <a href="{{ url_for('dashboard.home') }}" class="brand light">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="34" height="34">
+      <span>Career Match <b>AI</b></span>
+    </a>
+    <div>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-ghost-light">Log in</a>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Get started</a>
+    </div>
+  </header>
+  <section class="hero">
+    <span class="pill"><i class="fa-solid fa-wand-magic-sparkles"></i> Resume analysis · Skill gaps · Jobs · Interviews</span>
+    <h1>Land the right job,<br><span class="gradient-text">faster.</span></h1>
+    <p>Upload your resume, see exactly how it scores and why, find the skills you are missing for your target company, then build a better resume and practise interviews, all in one place.</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Create free account</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-ghost-light btn-lg">I have an account</a>
+    </div>
+  </section>
+  <section class="features">
+    {% for icon, title, text in [
+      ('fa-magnifying-glass-chart', 'Resume Analyzer', 'Score out of 100 using a transparent rubric, with strengths, gaps and suggestions.'),
+      ('fa-building', 'Company skill gaps', 'Compare your skills with role and company requirement profiles.'),
+      ('fa-file-pen', 'Resume Builder', 'Three ATS-friendly templates, live preview and PDF download.'),
+      ('fa-briefcase', 'Job Finder', 'Compatibility score and missing skills for every listing.'),
+      ('fa-comments', 'Interview Practice', 'Technical and HR questions with suggested answers and feedback.'),
+      ('fa-chart-line', 'Progress dashboard', 'Track your resume scores and practice over time.')] %}
+    <div class="feature"><i class="fa-solid {{ icon }}"></i><h3>{{ title }}</h3><p>{{ text }}</p></div>
+    {% endfor %}
+  </section>
+  <footer class="landing-footer">Career Match AI · College mini project</footer>
+</div>
+{% endblock %}
