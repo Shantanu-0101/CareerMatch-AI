@@ -10,11 +10,11 @@ using a clearly labelled rule-based fallback.
 
 ---
 
-## Features
+## Features:
 
 | Module | What it does |
 |---|---|
-| **Authentication** | Register / login / logout, hashed passwords (Werkzeug), sessions (Flask-Login), CSRF protection, per-user data isolation |
+| **Authentication** | Register/login / logout, hashed passwords (Werkzeug), sessions (Flask-Login), CSRF protection, per-user data isolation |
 | **Dashboard** | Welcome, stats (resumes, latest score, skills, recommended jobs), Chart.js charts, recent activity, quick actions |
 | **Resume Analyzer** | Upload PDF/DOCX, extract text, detect sections and skills, score out of 100 with a transparent rubric, strengths/weaknesses/suggestions, company + role skill-gap report |
 | **Resume Builder** | Personal details, summary, education, skills, projects, experience, certifications, achievements, languages; add/remove entries; show/hide sections; live preview; 3 templates; saved to DB; PDF download (ReportLab) |
@@ -117,7 +117,7 @@ All AI responses are requested as JSON and validated before use.
 ## Running the tests
 
 ```bash
-python -m unittest discover -s tests -t . -v
+python -m unittest discover -s tests -t. -v
 ```
 
 22 end-to-end tests cover registration/login, access control between users, PDF + DOCX upload and
